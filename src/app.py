@@ -5,6 +5,7 @@ import sys
 import json
 import urllib.parse
 import requests
+import re
 
 import furl
 from flask import Flask, Response, request
@@ -70,6 +71,64 @@ def root():
 @app.route('/ping')
 def ping():
     return {'status': 'ok'}
+
+
+def getSnippet(query, item):
+    """ Get hit highlight for a single item. """
+
+    id = item['id']
+    snippet = ''
+
+   # Execute the search for the highligh on the Annotation
+    params = {
+        'q': query,
+        'rows ': '100',
+        'wt ': 'json',
+        'version ': '2',
+        'fl ': 'id,extracted_text,extracted_text_source',
+        'fq ': ['rdf_type:oa\:Annotation',
+                'extracted_text_source:(' + id.replace(':', '\\:') + ')'],
+        'hl': 'true',
+        'hl.fragsize ': '500',
+        'hl.fl ': 'extracted_text',
+        'hl.simple.pre ': '<b>',
+        'hl.simple.post ': '</b>',
+    }
+
+    try:
+        response = requests.get(search_url.url, params=params)
+    except Exception as err:
+        logger.error(f'Error submitting search url={search_url.url}, params={params}\n{err}')
+
+        return snippet
+
+    if response.status_code != 200:
+        logger.error(f'Received {response.status_code} when submitted {query=}')
+
+        return snippet
+
+    logger.debug(f'Submitted url={search_url.url}, params={params}')
+    logger.debug(f'Received response {response.status_code}')
+    logger.debug(response.text)
+
+    data = json.loads(response.text)
+    logger.debug(data)
+
+    # Iterate over the results
+    for aid, h in data['highlighting'].items():
+        for t in h['extracted_text']:
+            if len(snippet) > 0:
+                snippet += "..."
+
+            # Remove end of line character
+            t = t.replace('\n', ' ')
+
+            # Remove annotation bounding box information
+            t = re.sub(r'\|\d+,\d+,\d+,\d+', '', t)
+
+            snippet += t
+
+    return snippet
 
 
 @app.route('/search')
@@ -164,7 +223,7 @@ def search():
                 'item_format': item['component_not_tokenized'],
                 'extra': {
                     'collection': item['collection_title_facet'][0],
-                    'htmlSnippet': '',
+                    'htmlSnippet': getSnippet(query, item),
                 },
             })
 
