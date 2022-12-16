@@ -7,28 +7,17 @@ which expects a REST interface following the Quick Search model.
 
 * Python 3
 
-## Running the Webapp
-
-```bash
-# create a .env file (then manually update environment variables)
-$ cp .env-template .env
-```
-
-### Running locally
-
-```bash
-# install requirements
-$ pip install -r requirements.txt
-
-# run the app with Flask
-$ flask run
-```
-
 ### Running in Docker
 
 ```bash
 $ docker build -t fcrepo-searcher .
 $ docker run -it --rm -p 5000:5000 --env-file=.env --read-only fcrepo-searcher
+```
+
+### Building for Kubernetes
+
+```bash
+$ docker buildx build . --builder=kube -t docker.lib.umd.edu/fcrepo-searcher:VERSION --push
 ```
 
 ### Endpoints
@@ -91,7 +80,7 @@ curl http://localhost:5000/search'?q=jim+henson+works'
 }
 ```
 
-[Flask's debug mode]: https://flask.palletsprojects.com/en/2.0.x/quickstart/#debug-mode
+[Flask's debug mode]: https://flask.palletsprojects.com/en/2.2.x/cli/?highlight=debug%20mode
 
 ## License
 

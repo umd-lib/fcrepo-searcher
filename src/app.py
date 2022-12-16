@@ -1,14 +1,13 @@
 import json
 import logging
 import os
-import sys
 import json
 import urllib.parse
 import requests
 import re
 
 import furl
-from flask import Flask, Response, request
+from flask import Flask, request
 from dotenv import load_dotenv
 from waitress import serve
 from paste.translogger import TransLogger
@@ -33,7 +32,7 @@ link = env['FCREPO_LINK']
 no_results_link = env['FCREPO_NO_RESULTS_LINK']
 module_link = env['FCREPO_MODULE_LINK']
 
-debug = os.environ.get('FLASK_ENV') == 'development'
+debug = os.environ.get('FLASK_DEBUG')
 
 logging.root.addHandler(logging.StreamHandler())
 
@@ -44,11 +43,6 @@ if debug:
     loggerWaitress.setLevel(logging.DEBUG)
     logger.setLevel(logging.DEBUG)
 
-    # from http.client import HTTPConnection
-    # HTTPConnection.debuglevel = 1
-    # requests_log = logging.getLogger("requests.packages.urllib3")
-    # requests_log.setLevel(logging.DEBUG)
-    # requests_log.propagate = True
 else:
     loggerWaitress.setLevel(logging.INFO)
     logger.setLevel(logging.INFO)
@@ -147,11 +141,11 @@ def search():
 
     per_page = 3
     if 'per_page' in args and args['per_page'] != "":
-    	per_page = args['per_page']
+        per_page = args['per_page']
 
     page = 0
     if 'page' in args and args['page'] != "" and args['page'] != "%":
-    	page = args['page']
+        page = args['page']
 
     start = int(page) * int(per_page)
     rows = per_page
