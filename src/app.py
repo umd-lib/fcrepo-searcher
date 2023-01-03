@@ -212,7 +212,6 @@ def search():
             collection_id = None
             if len(item['collection']) > 0:
                 collection = item['collection'][0]
-                logger.debug(collection)
                 colid_parsed = urllib.parse.urlsplit(collection)
                 if colid_parsed.path.find('pcdm/') == -1:
                     collection_id = colid_parsed.path.replace('/fcrepo/rest/', '?relpath=')
