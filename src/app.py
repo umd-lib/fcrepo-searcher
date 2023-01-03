@@ -159,7 +159,7 @@ def search():
         'wt': 'json', # get JSON format results
         'sort': 'score desc',
         'df': 'text',
-        'fl': 'id,display_title,component_not_tokenized,collection_title_facet,description',
+        'fl': 'id,display_title,component_not_tokenized,collection_title_facet,description,collection',
         'version': '2',
     }
 
@@ -209,10 +209,23 @@ def search():
         for item in data['response']['docs']:
             id = str(furl.furl(item['id']).path).split('/')[-1]
 
+            collection_id = None
+            if len(item['collection']) > 0:
+                collection = item['collection'][0]
+                logger.debug(collection)
+                colid_parsed = urllib.parse.urlsplit(collection)
+                if colid_parsed.path.find('pcdm/') == -1:
+                    collection_id = colid_parsed.path.replace('/fcrepo/rest/', '?relpath=')
+
+            item_link = link.replace('{id}', urllib.parse.quote_plus(id))
+            if collection_id is not None:
+                item_link = item_link.replace('{collection_id}', collection_id)
+            else:
+                item_link = item_link.replace('{collection_id}', '')
+
             results.append({
                 'title': item['display_title'],
-                'link': link.replace('{id}',
-                        urllib.parse.quote_plus(id)),
+                'link': item_link,
                 'description': item['description'] if 'description' in item else '',
                 'item_format': item['component_not_tokenized'],
                 'extra': {
