@@ -222,14 +222,16 @@ def search():
             else:
                 item_link = item_link.replace('{collection_id}', '')
 
+            htmlSnippet = getSnippet(query, item)
+
             results.append({
                 'title': item['display_title'],
                 'link': item_link,
-                'description': item['description'] if 'description' in item else '',
+                'description': item['description'] if 'description' in item else htmlSnippet,
                 'item_format': item['component_not_tokenized'],
                 'extra': {
                     'collection': item['collection_title_facet'][0],
-                    'htmlSnippet': getSnippet(query, item),
+                    'htmlSnippet': htmlSnippet,
                 },
             })
 
