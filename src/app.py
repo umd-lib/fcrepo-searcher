@@ -159,7 +159,7 @@ def search():
         'wt': 'json', # get JSON format results
         'sort': 'score desc',
         'df': 'text',
-        'fl': 'id,display_title,component_not_tokenized,collection_title_facet,description,collection',
+        'fl': 'id,display_title,component_not_tokenized,collection_title_facet,description,collection,containing_issue,annotation_source_type:[subquery]',
         'version': '2',
     }
 
@@ -194,6 +194,7 @@ def search():
     # Gather the search results into our response
     results = []
     response = {
+        'raw': data,
         'endpoint': endpoint,
         'query': query,
         "per_page": str(per_page),
@@ -216,7 +217,19 @@ def search():
                 if colid_parsed.path.find('pcdm/') == -1:
                     collection_id = colid_parsed.path.replace('/fcrepo/rest/', '?relpath=')
 
-            item_link = link.replace('{id}', urllib.parse.quote_plus(id))
+            if 'component_not_tokenized' in item:
+                item_format = item['component_not_tokenized']
+
+            issue_id = None
+            if 'containing_issue' in item:
+                issue_id = str(furl.furl(item['containing_issue']).path).split('/')[-1]
+
+            item_link = None
+            if item_format == 'Article':
+                item_link = link.replace('{id}', urllib.parse.quote_plus(issue_id))
+            else:
+                item_link = link.replace('{id}', urllib.parse.quote_plus(id))
+
             if collection_id is not None:
                 item_link = item_link.replace('{collection_id}', collection_id)
             else:
