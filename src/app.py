@@ -194,7 +194,6 @@ def search():
     # Gather the search results into our response
     results = []
     response = {
-        'raw': data,
         'endpoint': endpoint,
         'query': query,
         "per_page": str(per_page),
@@ -225,7 +224,7 @@ def search():
                 issue_id = str(furl.furl(item['containing_issue']).path).split('/')[-1]
 
             item_link = None
-            if item_format == 'Article':
+            if item_format == 'Article' and issue_id is not None:
                 item_link = link.replace('{id}', urllib.parse.quote_plus(issue_id))
             else:
                 item_link = link.replace('{id}', urllib.parse.quote_plus(id))
