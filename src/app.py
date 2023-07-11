@@ -150,9 +150,16 @@ def search():
     start = int(page) * int(per_page)
     rows = per_page
 
+    # Currently unused but left here intentionally, as the current
+    # replace may not be enough.
+    escaped_query = query.translate(str.maketrans({":": r"\:",
+                                                   "&": r"\&",
+                                                   "(": r"\(",
+                                                   ")": r"\)"}))
+
     # Execute the search
     params = {
-        'q': '{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + query,
+        'q': '{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + ' text:' + query.replace(":", "\\:") + ' OR ' + 'title:' + query.replace(":", "\\:"),
         'rows': rows,  # number of results
         'start': start,  # starting at this result (0 is the first result)
         'fq': search_fq, # filter query
@@ -165,6 +172,7 @@ def search():
 
     try:
         response = requests.get(search_url.url, params=params)
+        logger.warning(response.url)
     except Exception as err:
         logger.error(f'Error submitting search url={search_url.url}, params={params}\n{err}')
 
@@ -235,6 +243,9 @@ def search():
                 item_link = item_link.replace('{collection_id}', '')
 
             htmlSnippet = getSnippet(query, item)
+
+            if query is not None:
+                item_link += '?query=' + query
 
             results.append({
                 'title': item['display_title'],
