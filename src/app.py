@@ -222,7 +222,7 @@ def search():
                 collection = item['collection'][0]
                 colid_parsed = urllib.parse.urlsplit(collection)
                 if colid_parsed.path.find('pcdm/') == -1:
-                    collection_id = colid_parsed.path.replace('/fcrepo/rest/', '?relpath=')
+                    collection_id = colid_parsed.path.replace('/fcrepo/rest/', 'relpath=')
 
             if 'component_not_tokenized' in item:
                 item_format = item['component_not_tokenized']
@@ -237,15 +237,21 @@ def search():
             else:
                 item_link = link.replace('{id}', urllib.parse.quote_plus(id))
 
-            if collection_id is not None:
-                item_link = item_link.replace('{collection_id}', collection_id)
-            else:
-                item_link = item_link.replace('{collection_id}', '')
-
             htmlSnippet = getSnippet(query, item)
 
+            safe_query = None
             if query is not None:
-                item_link += '?query=' + query
+                safe_query = 'query=' + urllib.parse.quote_plus(query)
+
+            if safe_query is not None or collection_id is not None:
+                item_link += '?'
+                if safe_query is not None:
+                    item_link += safe_query
+                    if collection_id is not None:
+                        item_link += '&'
+                if collection_id is not None:
+                    item_link += collection_id
+
 
             results.append({
                 'title': item['display_title'],
