@@ -73,7 +73,7 @@ def getSnippet(query, item):
     id = item['id']
     snippet = ''
 
-   # Execute the search for the highligh on the Annotation
+    # Execute the search for the highligh on the Annotation
     params = {
         'q': query,
         'rows ': '100',
@@ -110,17 +110,18 @@ def getSnippet(query, item):
 
     # Iterate over the results
     for aid, h in data['highlighting'].items():
-        for t in h['extracted_text']:
-            if len(snippet) > 0:
-                snippet += "..."
+        if 'extracted_text' in h:
+            for t in h['extracted_text']:
+                if len(snippet) > 0:
+                    snippet += "..."
 
-            # Remove end of line character
-            t = t.replace('\n', ' ')
+                # Remove end of line character
+                t = t.replace('\n', ' ')
 
-            # Remove annotation bounding box information
-            t = re.sub(r'\|\d+,\d+,\d+,\d+', '', t)
+                # Remove annotation bounding box information
+                t = re.sub(r'\|\d+,\d+,\d+,\d+', '', t)
 
-            snippet += t
+                snippet += t
 
     return snippet
 
@@ -150,29 +151,60 @@ def search():
     start = int(page) * int(per_page)
     rows = per_page
 
-    # Currently unused but left here intentionally, as the current
-    # replace may not be enough.
-    escaped_query = query.translate(str.maketrans({":": r"\:",
-                                                   "&": r"\&",
-                                                   "(": r"\(",
-                                                   ")": r"\)"}))
+    quotes_pattern = r'"([^"]*)"'
+
+    escaped_query = query
+    if re.search(quotes_pattern, query) is None:
+        escaped_query = query.translate(str.maketrans({":": "",
+                                                      "(": "",
+                                                      ")": "",
+                                                      "{": "",
+                                                      "}": "",
+                                                      "]": "",
+                                                      "+": "",
+                                                      "*": "",
+                                                      "%": "",
+                                                      "[": ""}))
+        escaped_query = escaped_query.strip()
+
+    if escaped_query is None or len(escaped_query) == 0:
+        return {
+            'endpoint': endpoint,
+            'error': {
+                'msg': 'Invalid query parameters',
+            },
+        }, 400
+
+    completed_query = '(text:((' + escaped_query + '))^1 ' + ' text_ja:((' + escaped_query + '))^1 ' + ' text_ja_latn:((' + escaped_query + '))^1 ' + 'title:((' + escaped_query + '))^1)'
 
     # Execute the search
     params = {
-        'q': '{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + ' text:' + query.replace(":", "\\:") + ' OR ' + 'title:' + query.replace(":", "\\:"),
+        'df': 'text',
+        'TZ': 'UTC',
+        'fl': 'containing_issue,extracted_text_source,collection,id,component_not_tokenized,page_number,display_title,date,collection_title_facet,score,hash,annotation_source_type:[subquery],files:[subquery]',
+        'f.collection_title_facet.facet.missing': 'false',
+        'issue_title.q': '{!terms f=id v=$row.containing_issue}',
+        'annotation_source_type.q': '{!terms f=id v=$row.annotation_source}',
+        'q.op': 'OR',
+        'facet.missing': 'false',
+        'fq': search_fq, # filter query
+        'issue_title.fl': 'display_title',
+        'annotation_source_title.fl': 'id,display_title',
+        'files.fq': 'mime_type:application/pdf',
+        'f.date_decade.facet.missing': 'false',
+        'wt': 'json', # get JSON format results
+        'annotation_source_type.fl': 'id,component',
+        'issue_title.rows': '1',
+        'files.fl': 'id,title,filename,mime_type',
+        'sort': 'score desc',
+        'q': '{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND} ' + completed_query,
         'rows': rows,  # number of results
         'start': start,  # starting at this result (0 is the first result)
-        'fq': search_fq, # filter query
-        'wt': 'json', # get JSON format results
-        'sort': 'score desc',
-        'df': 'text',
-        'fl': 'id,display_title,component_not_tokenized,collection_title_facet,description,collection,containing_issue,annotation_source_type:[subquery]',
         'version': '2',
     }
 
     try:
         response = requests.get(search_url.url, params=params)
-        logger.warning(response.url)
     except Exception as err:
         logger.error(f'Error submitting search url={search_url.url}, params={params}\n{err}')
 
@@ -237,11 +269,11 @@ def search():
             else:
                 item_link = link.replace('{id}', urllib.parse.quote_plus(id))
 
-            htmlSnippet = getSnippet(query, item)
+            htmlSnippet = getSnippet(completed_query, item)
 
             safe_query = None
             if query is not None:
-                safe_query = 'query=' + urllib.parse.quote_plus(query)
+                safe_query = 'query=' + urllib.parse.quote_plus(escaped_query)
 
             if safe_query is not None or collection_id is not None:
                 item_link += '?'
