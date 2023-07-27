@@ -175,7 +175,7 @@ def search():
             },
         }, 400
 
-    completed_query = '(text:((' + escaped_query + '))^1 ' + ' text_ja:((' + escaped_query + '))^1 ' + ' text_ja_latn:((' + escaped_query + '))^1 ' + 'title:((' + escaped_query + '))^1)'
+    completed_query = '(text:((' + escaped_query + '))^1 ' + ' text_ja:((' + escaped_query + '))^1 ' + ' text_ja_latn:((' + escaped_query + '))^1 ' + 'title:((' + escaped_query + '))^2)'
 
     # Execute the search
     params = {
@@ -197,7 +197,7 @@ def search():
         'issue_title.rows': '1',
         'files.fl': 'id,title,filename,mime_type',
         'sort': 'score desc',
-        'q': '{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND} ' + completed_query,
+        'q': '_query_:{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + escaped_query + ' OR ' + completed_query,
         'rows': rows,  # number of results
         'start': start,  # starting at this result (0 is the first result)
         'version': '2',
