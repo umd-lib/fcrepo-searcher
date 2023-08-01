@@ -125,6 +125,20 @@ def getSnippet(query, item):
 
     return snippet
 
+def strip_query(query):
+    escaped_query = query.translate(str.maketrans({":": "",
+                                                  "(": "",
+                                                  ")": "",
+                                                  "{": "",
+                                                  "}": "",
+                                                  "]": "",
+                                                  "+": "",
+                                                  "*": "",
+                                                  "%": "",
+                                                  "[": ""}))
+    escaped_query = escaped_query.strip()
+    return escaped_query
+
 
 @app.route('/search')
 def search():
@@ -155,17 +169,7 @@ def search():
 
     escaped_query = query
     if re.search(quotes_pattern, query) is None:
-        escaped_query = query.translate(str.maketrans({":": "",
-                                                      "(": "",
-                                                      ")": "",
-                                                      "{": "",
-                                                      "}": "",
-                                                      "]": "",
-                                                      "+": "",
-                                                      "*": "",
-                                                      "%": "",
-                                                      "[": ""}))
-        escaped_query = escaped_query.strip()
+        escaped_query = strip_query(escaped_query)
 
     if escaped_query is None or len(escaped_query) == 0:
         return {
@@ -175,7 +179,8 @@ def search():
             },
         }, 400
 
-    completed_query = '(text:((' + escaped_query + '))^1 ' + ' text_ja:((' + escaped_query + '))^1 ' + ' text_ja_latn:((' + escaped_query + '))^1 ' + 'title:((' + escaped_query + '))^2)'
+    completed_query = '(text:((' + escaped_query + '))^2 ' + ' text_ja:((' + escaped_query + '))^1 ' + ' text_ja_latn:((' + escaped_query + '))^1)'
+    base_query = '_query_:{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + strip_query(query).replace("\"", "\\\"") + ' ' + completed_query
 
     # Execute the search
     params = {
@@ -197,7 +202,7 @@ def search():
         'issue_title.rows': '1',
         'files.fl': 'id,title,filename,mime_type',
         'sort': 'score desc',
-        'q': '_query_:{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + escaped_query + ' OR ' + completed_query,
+        'q': base_query,
         'rows': rows,  # number of results
         'start': start,  # starting at this result (0 is the first result)
         'version': '2',
