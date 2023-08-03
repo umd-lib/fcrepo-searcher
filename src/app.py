@@ -180,7 +180,8 @@ def search():
         }, 400
 
     completed_query = '(text:((' + escaped_query + '))^2 ' + ' text_ja:((' + escaped_query + '))^1 ' + ' text_ja_latn:((' + escaped_query + '))^1)'
-    base_query = '_query_:{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + strip_query(query).replace("\"", "\\\"") + ' ' + completed_query
+    # base_query = '_query_:{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + strip_query(query).replace("\"", "\\\"") + ' ' + completed_query
+    base_query = '_query_:{!type=graph from=id to=extracted_text_source maxDepth=1 q.op=AND}' + strip_query(query).replace("\"", "") + ' ' + completed_query
 
     # Execute the search
     params = {
