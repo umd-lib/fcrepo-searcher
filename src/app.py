@@ -19,7 +19,7 @@ load_dotenv('../.env')
 
 # Get environment variables
 env = {}
-for key in ('FCREPO_SOLR_URL', 'FCREPO_SOLR_FILTER_QUERY', 
+for key in ('FCREPO_SOLR_URL', 'FCREPO_SOLR_FILTER_QUERY',
             'FCREPO_LINK', 'FCREPO_NO_RESULTS_LINK', 'FCREPO_MODULE_LINK'):
     env[key] = os.environ.get(key)
     if env[key] is None:
@@ -92,7 +92,8 @@ def getSnippet(query, item):
     try:
         response = requests.get(search_url.url, params=params)
     except Exception as err:
-        logger.error(f'Error submitting search url={search_url.url}, params={params}\n{err}')
+        logger.error(f'Error submitting search url={search_url.url}, \
+                     params={params}\n{err}')
 
         return snippet
 
@@ -125,17 +126,18 @@ def getSnippet(query, item):
 
     return snippet
 
+
 def strip_query(query):
     escaped_query = query.translate(str.maketrans({":": "",
-                                                  "(": "",
-                                                  ")": "",
-                                                  "{": "",
-                                                  "}": "",
-                                                  "]": "",
-                                                  "+": "",
-                                                  "*": "",
-                                                  "%": "",
-                                                  "[": ""}))
+                                                   "(": "",
+                                                   ")": "",
+                                                   "{": "",
+                                                   "}": "",
+                                                   "]": "",
+                                                   "+": "",
+                                                   "*": "",
+                                                   "%": "",
+                                                   "[": ""}))
     escaped_query = escaped_query.strip()
     return escaped_query
 
@@ -193,12 +195,12 @@ def search():
         'annotation_source_type.q': '{!terms f=id v=$row.annotation_source}',
         'q.op': 'OR',
         'facet.missing': 'false',
-        'fq': search_fq, # filter query
+        'fq': search_fq,  # filter query
         'issue_title.fl': 'display_title',
         'annotation_source_title.fl': 'id,display_title',
         'files.fq': 'mime_type:application/pdf',
         'f.date_decade.facet.missing': 'false',
-        'wt': 'json', # get JSON format results
+        'wt': 'json',  # get JSON format results
         'annotation_source_type.fl': 'id,component',
         'issue_title.rows': '1',
         'files.fl': 'id,title,filename,mime_type',
@@ -211,6 +213,7 @@ def search():
 
     try:
         response = requests.get(search_url.url, params=params)
+        logger.warn(response.url)
     except Exception as err:
         logger.error(f'Error submitting search url={search_url.url}, params={params}\n{err}')
 
@@ -289,7 +292,6 @@ def search():
                         item_link += '&'
                 if collection_id is not None:
                     item_link += collection_id
-
 
             results.append({
                 'title': item['display_title'],
