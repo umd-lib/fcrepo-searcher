@@ -4,3 +4,4 @@ Paste==3.5.2
 python-dotenv==0.20.0
 requests==2.26.0
 waitress==2.0.0
+Werkzeug>=2.2,<3.0
